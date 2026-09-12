@@ -1,0 +1,38 @@
+[project]
+name = "keep-cli"
+version = "0.1.0"
+description = "Command-line client for Google Keep: list, read, create, edit and delete notes."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "gkeepapi>=0.17.1",
+    "gpsoauth>=2.0.0",
+    "click>=8.1",
+]
+
+[project.scripts]
+keep = "keep_cli.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/keep_cli"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "W"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
