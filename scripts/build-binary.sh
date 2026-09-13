@@ -31,3 +31,4 @@ mv "dist/keep" "dist/${NAME}"
 
 echo "built dist/${NAME}"
 "dist/${NAME}" --version
+"dist/${NAME}" --help > /dev/null

@@ -43,27 +43,42 @@ jobs:
         include:
           - arch: amd64
             runner: ubuntu-24.04
-          - arch: arm64 # Raspberry Pi 4 (64-bit OS)
+            platform: linux/amd64
+          - arch: arm64 # Raspberry Pi 4/5 with a 64-bit OS
             runner: ubuntu-24.04-arm
+            platform: linux/arm64
+          - arch: armv7 # Raspberry Pi with a 32-bit OS; emulated with QEMU, so this job is slow
+            runner: ubuntu-24.04
+            platform: linux/arm/v7
     runs-on: ${{ matrix.runner }}
-    # Debian bullseye ships glibc 2.31, so the binaries run on Debian 11+, Ubuntu 20.04+
-    # and Raspberry Pi OS Bullseye or newer.
-    container: python:3.12-slim-bullseye
+    timeout-minutes: 120
     steps:
-      - name: Install build tools
-        run: |
-          apt-get update
-          apt-get install -y --no-install-recommends binutils git ca-certificates
-          pip install --no-cache-dir uv
       - uses: actions/checkout@v4
-      - name: Build binary
-        run: ./scripts/build-binary.sh
+      - name: Set up QEMU
+        if: matrix.arch == 'armv7'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm
+      # Debian bullseye ships glibc 2.31, so the binaries run on Debian 11+, Ubuntu 20.04+
+      # and Raspberry Pi OS Bullseye or newer. gcc/zlib are needed on armv7, where
+      # pyinstaller and pycryptodomex have no prebuilt wheels and compile from source.
+      - name: Build binary in Debian bullseye container
+        run: |
+          docker run --rm --platform "${{ matrix.platform }}" \
+            --volume "${PWD}:/src" --workdir /src \
+            --env UV_LINK_MODE=copy \
+            python:3.12-slim-bullseye bash -euo pipefail -c '
+              apt-get update
+              apt-get install -y --no-install-recommends \
+                binutils gcc libc6-dev zlib1g-dev git ca-certificates
+              pip install --no-cache-dir uv
+              ./scripts/build-binary.sh
+            '
       - name: Verify binary
         run: |
           ls -la dist
           test -x "dist/keep-linux-${{ matrix.arch }}"
           (cd dist && sha256sum -c "keep-linux-${{ matrix.arch }}.sha256")
-          "dist/keep-linux-${{ matrix.arch }}" --help
       - uses: actions/upload-artifact@v4
         with:
           name: keep-linux-${{ matrix.arch }}

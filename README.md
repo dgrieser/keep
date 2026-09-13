@@ -18,9 +18,10 @@ self-contained Linux binaries that need no Python installation:
 |------|--------|
 | `keep-linux-amd64` | 64-bit x86 Linux |
 | `keep-linux-arm64` | 64-bit ARM Linux, e.g. Raspberry Pi 4 / 5 running a 64-bit Raspberry Pi OS |
+| `keep-linux-armv7` | 32-bit ARM Linux, e.g. Raspberry Pi 2 / 3 / 4 running a 32-bit Raspberry Pi OS |
 
 ```sh
-# pick amd64 or arm64
+# pick amd64, arm64 or armv7 (check with `uname -m`: x86_64, aarch64 or armv7l)
 ARCH=arm64
 curl -fsSLO "https://github.com/dgrieser/keep/releases/latest/download/keep-linux-${ARCH}"
 curl -fsSLO "https://github.com/dgrieser/keep/releases/latest/download/keep-linux-${ARCH}.sha256"
@@ -30,8 +31,7 @@ keep --help
 ```
 
 The binaries are built on Debian bullseye and require glibc 2.31 or newer, which covers
-Debian 11+, Ubuntu 20.04+ and Raspberry Pi OS Bullseye or newer. A Raspberry Pi running a
-32-bit OS is not covered; use the source install below instead.
+Debian 11+, Ubuntu 20.04+ and Raspberry Pi OS Bullseye or newer.
 
 ### From source
 
@@ -159,7 +159,8 @@ git push origin v0.2.0
 ```
 
 The `Release` GitHub Actions workflow then runs lint and tests, checks that the tag matches
-`__version__`, builds the amd64 and arm64 binaries on native runners, and creates a GitHub
+`__version__`, builds the amd64 and arm64 binaries on native runners and the armv7 binary
+under QEMU emulation, and creates a GitHub
 release with the binaries, their `.sha256` files and auto-generated release notes attached.
 Running the workflow manually from the Actions tab builds the binaries as workflow artifacts
 without creating a release.
