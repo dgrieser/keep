@@ -9,6 +9,32 @@ accounts, but because the API is unofficial it may break if Google changes it.
 
 ## Installation
 
+### Prebuilt binaries
+
+Every tagged release on the [Releases page](https://github.com/dgrieser/keep/releases) ships
+self-contained Linux binaries that need no Python installation:
+
+| File | Target |
+|------|--------|
+| `keep-linux-amd64` | 64-bit x86 Linux |
+| `keep-linux-arm64` | 64-bit ARM Linux, e.g. Raspberry Pi 4 / 5 running a 64-bit Raspberry Pi OS |
+| `keep-linux-armv7` | 32-bit ARM Linux, e.g. Raspberry Pi 2 / 3 / 4 running a 32-bit Raspberry Pi OS |
+
+```sh
+# pick amd64, arm64 or armv7 (check with `uname -m`: x86_64, aarch64 or armv7l)
+ARCH=arm64
+curl -fsSLO "https://github.com/dgrieser/keep/releases/latest/download/keep-linux-${ARCH}"
+curl -fsSLO "https://github.com/dgrieser/keep/releases/latest/download/keep-linux-${ARCH}.sha256"
+sha256sum -c "keep-linux-${ARCH}.sha256"
+install -m 0755 "keep-linux-${ARCH}" ~/.local/bin/keep   # or /usr/local/bin/keep
+keep --help
+```
+
+The binaries are built on Debian bullseye and require glibc 2.31 or newer, which covers
+Debian 11+, Ubuntu 20.04+ and Raspberry Pi OS Bullseye or newer.
+
+### From source
+
 Requires Python 3.10+ and [uv](https://docs.astral.sh/uv/).
 
 ```sh
@@ -114,3 +140,27 @@ uv run pytest
 ```
 
 The tests run fully offline against an in-memory gkeepapi instance; nothing talks to Google.
+
+### Building a binary locally
+
+```sh
+./scripts/build-binary.sh     # needs uv and binutils; writes dist/keep-linux-<arch> + .sha256
+```
+
+### Releasing
+
+The version lives in `src/keep_cli/__init__.py`. To publish a release:
+
+```sh
+# 1. bump __version__, commit
+# 2. tag and push the tag
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+The `Release` GitHub Actions workflow then runs lint and tests, checks that the tag matches
+`__version__`, builds the amd64 and arm64 binaries on native runners and the armv7 binary
+under QEMU emulation, and creates a GitHub
+release with the binaries, their `.sha256` files and auto-generated release notes attached.
+Running the workflow manually from the Actions tab builds the binaries as workflow artifacts
+without creating a release.
