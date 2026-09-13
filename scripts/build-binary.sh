@@ -16,6 +16,14 @@ esac
 OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
 NAME="keep-${OS}-${ARCH}"
 
+# When KEEP_VERSION is set (the release workflow passes the git tag), stamp it into the
+# package so that `keep --version` and the release assets agree with the tag.
+if [ -n "${KEEP_VERSION:-}" ]; then
+  version="${KEEP_VERSION#v}"
+  sed -i "s/^__version__ = .*/__version__ = \"${version}\"/" src/keep_cli/__init__.py
+  echo "stamped version ${version}"
+fi
+
 uv sync --frozen --group build
 rm -rf build dist
 uv run --frozen pyinstaller \

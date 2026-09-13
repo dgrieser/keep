@@ -149,18 +149,20 @@ The tests run fully offline against an in-memory gkeepapi instance; nothing talk
 
 ### Releasing
 
-The version lives in `src/keep_cli/__init__.py`. To publish a release:
+The git tag is the release version. To publish a release:
 
 ```sh
-# 1. bump __version__, commit
-# 2. tag and push the tag
 git tag v0.2.0
 git push origin v0.2.0
 ```
 
-The `Release` GitHub Actions workflow then runs lint and tests, checks that the tag matches
-`__version__`, builds the amd64 and arm64 binaries on native runners and the armv7 binary
+The `Release` GitHub Actions workflow then runs lint and tests, checks that the tag looks
+like `vX.Y.Z`, stamps the tag's version into the binaries (so `keep --version` matches the
+release), builds the amd64 and arm64 binaries on native runners and the armv7 binary
 under QEMU emulation, and creates a GitHub
 release with the binaries, their `.sha256` files and auto-generated release notes attached.
 Running the workflow manually from the Actions tab builds the binaries as workflow artifacts
 without creating a release.
+
+The `__version__` in `src/keep_cli/__init__.py` is only used by source installs; bump it
+when convenient so `uv tool install .` reports something sensible.

@@ -25,12 +25,11 @@ jobs:
           uv run ruff format --check .
       - name: Test
         run: uv run pytest -q
-      - name: Check that the tag matches the project version
+      - name: Check tag format
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          version="$(uv run --frozen python -c 'import keep_cli; print(keep_cli.__version__)')"
-          if [ "v${version}" != "${GITHUB_REF_NAME}" ]; then
-            echo "::error::tag ${GITHUB_REF_NAME} does not match keep_cli.__version__ (${version})"
+          if ! [[ "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.]+)?$ ]]; then
+            echo "::error::tag ${GITHUB_REF_NAME} must look like v1.2.3 (optionally v1.2.3-rc1)"
             exit 1
           fi
 
@@ -63,10 +62,13 @@ jobs:
       # and Raspberry Pi OS Bullseye or newer. gcc/zlib are needed on armv7, where
       # pyinstaller and pycryptodomex have no prebuilt wheels and compile from source.
       - name: Build binary in Debian bullseye container
+        env:
+          # On a tag build the binary reports the tag's version; manual runs keep __version__.
+          KEEP_VERSION: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '' }}
         run: |
           docker run --rm --platform "${{ matrix.platform }}" \
             --volume "${PWD}:/src" --workdir /src \
-            --env UV_LINK_MODE=copy \
+            --env UV_LINK_MODE=copy --env KEEP_VERSION \
             python:3.12-slim-bullseye bash -euo pipefail -c '
               apt-get update
               apt-get install -y --no-install-recommends \
